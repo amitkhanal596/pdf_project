@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pdfplumber
+import re
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:4000"])
@@ -97,7 +98,33 @@ def extract_sections(pdf_path):
         for index in range(0, len(sections[key])):
             sections[key][index] = sections[key][index].replace("D Not Satisfied: ", "")
 
+
+
     return sections
+
+
+def merge_course_requirements(data):
+    updated_data = {}
+    pattern = re.compile(r"· Courses: (\d+) required, \d+ taken, (\d+) needed")
+
+    for key, values in data.items():
+        if values:  # Only process non-empty lists
+            new_values = []
+            i = 0
+            while i < len(values):
+                match = pattern.match(values[i])
+                if match and new_values:
+                    courses_needed = match.group(2)  # Extract number of needed courses
+                    new_values[-1] += f" |||{courses_needed} course{'s' if courses_needed != '1' else ''} needed|||"
+                else:
+                    new_values.append(values[i])
+                i += 1  # Move to the next item
+                
+            updated_data[key] = new_values
+        else:
+            updated_data[key] = values  # Keep empty lists unchanged
+
+    return updated_data
 
 
 
@@ -111,6 +138,7 @@ def process_pdf():
     pdf_file.save(pdf_path)
 
     extracted_data = extract_sections(pdf_path)
+    extracted_data = merge_course_requirements(extracted_data)
     return jsonify(extracted_data)
 
 if __name__ == "__main__":

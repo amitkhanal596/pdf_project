@@ -14,7 +14,7 @@ function TableDisplay({ data }) {
                             {data[key].map((item, index) => {
                                 return (
                                     <ul>
-                                            <li>{item}</li>
+                                        <li>{item}</li>
                                     </ul>
                                 );
                             })}
